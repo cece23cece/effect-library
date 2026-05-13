@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Effect Library • v3.48</title>
+    <title>Effect Library • v3.49</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <h1 class="font-display text-2xl font-semibold tracking-tight">Effect Library</h1>
-                    <p class="text-xs text-zinc-500 -mt-1">v3.48 • Perfect Alignment</p>
+                    <p class="text-xs text-zinc-500 -mt-1">v3.49 • Categories Only</p>
                 </div>
             </div>
             <div class="flex items-center gap-x-3">
@@ -85,7 +85,7 @@
         </div>
     </div>
 
-    <!-- PROMPT BUILDER (PERFECT ALIGNMENT v3.48) -->
+    <!-- PROMPT BUILDER -->
     <div id="section-builder" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-semibold mb-2">Prompt Builder</h2>
@@ -197,7 +197,7 @@
 
     <div class="fixed bottom-4 right-4 bg-zinc-900 border border-zinc-700 rounded-3xl p-4 w-80 max-h-[45vh] overflow-auto shadow-2xl z-[9999]">
         <div class="flex justify-between items-center mb-3 border-b border-zinc-700 pb-2">
-            <span class="font-semibold text-emerald-400">🔍 Debug v3.48</span>
+            <span class="font-semibold text-emerald-400">🔍 Debug v3.49</span>
             <button onclick="clearDebugLog()" class="text-xs text-zinc-500 hover:text-zinc-300">Clear</button>
         </div>
         <div id="debug-panel" class="text-emerald-300/90 whitespace-pre-wrap"></div>
@@ -232,7 +232,6 @@
             let total = 0;
             effects.forEach(e => {
                 if (e.categories && e.categories.length > 0) total += e.categories.length;
-                else if (e.category) total += 1;
             });
             return total;
         }
@@ -283,14 +282,12 @@
                 tx.objectStore('effects').getAll().onsuccess = e => {
                     const raw = e.target.result || [];
                     const fixed = raw.map(eff => {
-                        if (eff.categories) {
-                            eff.categories = eff.categories.map(c => 
-                                (c && typeof c === 'object' && c.name) ? c.name : c
-                            );
+                        // Migration: convert old singular category to categories array
+                        if (eff.category && !eff.categories) {
+                            eff.categories = [eff.category];
+                            delete eff.category;
                         }
-                        if (eff.category && typeof eff.category === 'object' && eff.category.name) {
-                            eff.category = eff.category.name;
-                        }
+                        if (!eff.categories) eff.categories = ["uncategorised"];
                         return eff;
                     });
                     resolve(fixed);
@@ -343,7 +340,7 @@
         }
 
         async function exportData() {
-            log("Starting export (v3.48)...");
+            log("Starting export (v3.49)...");
             
             const freshEffects = await getAllEffects();
             const freshCategories = await getAllCategories();
@@ -356,8 +353,7 @@
             const exportEffects = freshEffects.map(eff => ({
                 id: eff.id,
                 name: eff.name,
-                category: eff.categories && eff.categories.length > 0 ? eff.categories[0] : (eff.category || "uncategorised"),
-                categories: eff.categories || (eff.category ? [eff.category] : ["uncategorised"]),
+                categories: eff.categories || ["uncategorised"],
                 prompt: eff.prompt || '',
                 notes: eff.notes || '',
                 image: eff.image || null,
@@ -365,7 +361,7 @@
             }));
 
             const data = {
-                version: "3.48",
+                version: "3.49",
                 exportedAt: new Date().toISOString(),
                 categories: freshCategories,
                 effects: exportEffects
@@ -376,7 +372,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `effect-library-v3.48-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `effect-library-v3.49-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -518,7 +514,7 @@
             container.innerHTML = '';
 
             getSortedCategories().forEach(cat => {
-                const count = effects.filter(e => (e.categories || [e.category || "uncategorised"]).includes(cat)).length;
+                const count = effects.filter(e => (e.categories || []).includes(cat)).length;
                 const item = document.createElement('div');
 
                 if (cat === "uncategorised") {
@@ -555,7 +551,7 @@
             const grid = document.getElementById('main-effects-grid');
             grid.innerHTML = '';
 
-            const filtered = effects.filter(e => (e.categories || [e.category || "uncategorised"]).includes(cat))
+            const filtered = effects.filter(e => (e.categories || []).includes(cat))
                                   .sort((a, b) => a.name.localeCompare(b.name));
 
             if (filtered.length === 0) {
@@ -665,7 +661,7 @@
             document.getElementById('prompt-text').value = eff.prompt || '';
             document.getElementById('notes-text').value = eff.notes || '';
 
-            renderCategoryCheckboxes(eff.categories || [eff.category || "uncategorised"]);
+            renderCategoryCheckboxes(eff.categories || []);
 
             if (eff.image) {
                 document.getElementById('preview-img').src = eff.image;
@@ -783,9 +779,6 @@
                         e.categories = ["uncategorised"];
                     }
                 }
-                if (e.category === cat) {
-                    e.category = "uncategorised";
-                }
             });
 
             saveCategories();
@@ -808,7 +801,7 @@
             const sel = document.getElementById('builder-effect');
             sel.innerHTML = '<option value="">Select effect...</option>';
             if (!cat) return;
-            effects.filter(e => (e.categories || [e.category || "uncategorised"]).includes(cat)).forEach(eff => {
+            effects.filter(e => (e.categories || []).includes(cat)).forEach(eff => {
                 const opt = document.createElement('option');
                 opt.value = eff.id; opt.textContent = eff.name; sel.appendChild(opt);
             });
@@ -908,7 +901,7 @@
             await initDB();
             await loadData();
             switchTab('manage');
-            log('🚀 v3.48 loaded with perfect alignment');
+            log('🚀 v3.49 loaded — categories only');
         };
     </script>
 </body>
