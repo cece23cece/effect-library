@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Effect Library • v3.45 (Single File - Bulletproof)</title>
+    <title>Effect Library • v3.46</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="font-display text-2xl font-semibold tracking-tight">Effect Library</h1>
-                    <p class="text-xs text-zinc-500 -mt-1">v3.45 • Single File - Bulletproof</p>
+                    <p class="text-xs text-zinc-500 -mt-1">v3.46 • Prompt Builder Polish</p>
                 </div>
             </div>
             <div class="flex items-center gap-x-3">
@@ -80,6 +80,7 @@
         </div>
     </div>
 
+    <!-- PROMPT BUILDER (VISUALLY IMPROVED) -->
     <div id="section-builder" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-semibold mb-2">Prompt Builder</h2>
@@ -89,22 +90,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-sm mb-2 text-zinc-400">1. Category</label>
-                        <select id="builder-category" onchange="updateBuilderEffects()" class="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4"></select>
+                        <select id="builder-category" onchange="updateBuilderEffects()" class="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-3.5 h-[52px]"></select>
                     </div>
                     <div>
                         <label class="block text-sm mb-2 text-zinc-400">2. Effect</label>
-                        <div class="flex gap-3">
-                            <select id="builder-effect" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4"></select>
-                            <button onclick="addToBuilder()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap">Add Effect</button>
+                        <div class="flex gap-3 items-end">
+                            <select id="builder-effect" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-3.5 h-[52px]"></select>
+                            <button onclick="addToBuilder()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[52px] flex items-center justify-center">Add Effect</button>
                         </div>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-sm mb-2 text-zinc-400">3. Extra Instructions / Custom Phrase</label>
-                    <div class="flex gap-3">
-                        <textarea id="extra-instructions" rows="4" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 resize-y"></textarea>
-                        <button onclick="addCustomPhrase()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap self-start mt-1">Add Phrase</button>
+                    <div class="flex gap-3 items-end">
+                        <textarea id="extra-instructions" rows="2" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-3.5 resize-y h-[52px]"></textarea>
+                        <button onclick="addCustomPhrase()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[52px] flex items-center justify-center">Add Phrase</button>
                     </div>
                 </div>
             </div>
@@ -191,7 +192,7 @@
 
     <div class="fixed bottom-4 right-4 bg-zinc-900 border border-zinc-700 rounded-3xl p-4 w-80 max-h-[45vh] overflow-auto shadow-2xl z-[9999]">
         <div class="flex justify-between items-center mb-3 border-b border-zinc-700 pb-2">
-            <span class="font-semibold text-emerald-400">🔍 Debug v3.45</span>
+            <span class="font-semibold text-emerald-400">🔍 Debug v3.46</span>
             <button onclick="clearDebugLog()" class="text-xs text-zinc-500 hover:text-zinc-300">Clear</button>
         </div>
         <div id="debug-panel" class="text-emerald-300/90 whitespace-pre-wrap"></div>
@@ -336,9 +337,8 @@
             });
         }
 
-        // ==================== BULLETPROOF EXPORT ====================
         async function exportData() {
-            log("Starting bulletproof export (v3.45)...");
+            log("Starting export (v3.46)...");
             
             const freshEffects = await getAllEffects();
             const freshCategories = await getAllCategories();
@@ -360,7 +360,7 @@
             }));
 
             const data = {
-                version: "3.45",
+                version: "3.46",
                 exportedAt: new Date().toISOString(),
                 categories: freshCategories,
                 effects: exportEffects
@@ -371,7 +371,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `effect-library-v3.45-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `effect-library-v3.46-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -380,7 +380,6 @@
             alert(`✅ Exported ${freshEffects.length} effects!`);
         }
 
-        // ==================== BULLETPROOF IMPORT ====================
         function importData() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -404,7 +403,7 @@
                             return;
                         }
                         
-                        log("Starting bulletproof import...");
+                        log("Starting import...");
                         
                         let cleanedEffects = importedData.effects.map(eff => {
                             let cats = [];
@@ -470,8 +469,6 @@
             input.click();
         }
 
-        // ==================== REST OF FUNCTIONS ====================
-        
         function switchTab(tab) {
             document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
             document.getElementById('section-' + tab).classList.remove('hidden');
@@ -867,7 +864,7 @@
             await initDB();
             await loadData();
             switchTab('manage');
-            log('🚀 v3.45 loaded (Single File - Bulletproof)');
+            log('🚀 v3.46 loaded with Prompt Builder polish');
         };
     </script>
 </body>
