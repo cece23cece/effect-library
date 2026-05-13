@@ -7,3 +7,5 @@ body { font-family: 'Inter', system_ui, sans-serif; }
 .draggable { cursor: grab; }
 #debug-panel { font-family: monospace; font-size: 13px; line-height: 1.35; }
 .uncategorised-item { background-color: #1f2937; }
+.toast { animation: toast-pop 0.3s ease forwards; }
+@keyframes toast-pop { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
