@@ -138,7 +138,7 @@ async function saveCategories() {
 
 // ==================== BULLETPROOF EXPORT & IMPORT ====================
 async function exportData() {
-    log("Starting bulletproof export (v3.42)...");
+    log("Starting bulletproof export (v3.44)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -160,7 +160,7 @@ async function exportData() {
     }));
 
     const data = {
-        version: "3.42",
+        version: "3.44",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -171,7 +171,7 @@ async function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `effect-library-v3.42-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `effect-library-v3.44-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -270,7 +270,7 @@ function importData() {
     input.click();
 }
 
-// ==================== REST OF FUNCTIONS (same as v3.41) ====================
+// ==================== REST OF FUNCTIONS (same as v3.42) ====================
 
 function switchTab(tab) {
     document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
@@ -663,9 +663,25 @@ function showStorageInfo() {
     alert(`Effects: ${effects.length}\nApprox size: ${size} KB`);
 }
 
+// ==================== ERROR HANDLING ====================
+function showError(message) {
+    const banner = document.getElementById('error-banner');
+    const msgEl = document.getElementById('error-message');
+    if (banner && msgEl) {
+        msgEl.textContent = message;
+        banner.classList.remove('hidden');
+    }
+    console.error(message);
+}
+
 window.onload = async function() {
-    await initDB();
-    await loadData();
-    switchTab('manage');
-    log('🚀 v3.42 loaded with Bulletproof Import');
+    try {
+        await initDB();
+        await loadData();
+        switchTab('manage');
+        log('🚀 v3.44 loaded with Error Reporting');
+    } catch (err) {
+        showError(err.message || 'Unknown error during startup');
+        log('❌ Startup error: ' + err.message);
+    }
 };
