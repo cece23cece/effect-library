@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Effect Library • v3.46</title>
+    <title>Effect Library • v3.47</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -16,9 +16,14 @@
         .draggable { cursor: grab; }
         #debug-panel { font-family: monospace; font-size: 13px; line-height: 1.35; }
         .uncategorised-item { background-color: #1f2937; }
+        .toast { animation: toast-pop 0.3s ease forwards; }
+        @keyframes toast-pop { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none"></div>
 
     <div class="border-b border-zinc-800 bg-zinc-900">
         <div class="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -28,7 +33,7 @@
                 </div>
                 <div>
                     <h1 class="font-display text-2xl font-semibold tracking-tight">Effect Library</h1>
-                    <p class="text-xs text-zinc-500 -mt-1">v3.46 • Prompt Builder Polish</p>
+                    <p class="text-xs text-zinc-500 -mt-1">v3.47 • +Builder Button + Polish</p>
                 </div>
             </div>
             <div class="flex items-center gap-x-3">
@@ -80,7 +85,7 @@
         </div>
     </div>
 
-    <!-- PROMPT BUILDER (VISUALLY IMPROVED) -->
+    <!-- PROMPT BUILDER (PERFECTLY ALIGNED) -->
     <div id="section-builder" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-semibold mb-2">Prompt Builder</h2>
@@ -96,7 +101,7 @@
                         <label class="block text-sm mb-2 text-zinc-400">2. Effect</label>
                         <div class="flex gap-3 items-end">
                             <select id="builder-effect" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-3.5 h-[52px]"></select>
-                            <button onclick="addToBuilder()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[52px] flex items-center justify-center">Add Effect</button>
+                            <button onclick="addToBuilder()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[52px] flex items-center justify-center min-w-[120px]">Add Effect</button>
                         </div>
                     </div>
                 </div>
@@ -105,7 +110,7 @@
                     <label class="block text-sm mb-2 text-zinc-400">3. Extra Instructions / Custom Phrase</label>
                     <div class="flex gap-3 items-end">
                         <textarea id="extra-instructions" rows="2" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-3.5 resize-y h-[52px]"></textarea>
-                        <button onclick="addCustomPhrase()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[52px] flex items-center justify-center">Add Phrase</button>
+                        <button onclick="addCustomPhrase()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[52px] flex items-center justify-center min-w-[120px]">Add Phrase</button>
                     </div>
                 </div>
             </div>
@@ -192,7 +197,7 @@
 
     <div class="fixed bottom-4 right-4 bg-zinc-900 border border-zinc-700 rounded-3xl p-4 w-80 max-h-[45vh] overflow-auto shadow-2xl z-[9999]">
         <div class="flex justify-between items-center mb-3 border-b border-zinc-700 pb-2">
-            <span class="font-semibold text-emerald-400">🔍 Debug v3.46</span>
+            <span class="font-semibold text-emerald-400">🔍 Debug v3.47</span>
             <button onclick="clearDebugLog()" class="text-xs text-zinc-500 hover:text-zinc-300">Clear</button>
         </div>
         <div id="debug-panel" class="text-emerald-300/90 whitespace-pre-wrap"></div>
@@ -338,7 +343,7 @@
         }
 
         async function exportData() {
-            log("Starting export (v3.46)...");
+            log("Starting export (v3.47)...");
             
             const freshEffects = await getAllEffects();
             const freshCategories = await getAllCategories();
@@ -360,7 +365,7 @@
             }));
 
             const data = {
-                version: "3.46",
+                version: "3.47",
                 exportedAt: new Date().toISOString(),
                 categories: freshCategories,
                 effects: exportEffects
@@ -371,7 +376,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `effect-library-v3.46-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `effect-library-v3.47-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -568,6 +573,7 @@
                     <div class="p-4">
                         <h3 class="font-semibold text-sm">${eff.name}</h3>
                         <div class="flex gap-2 mt-4">
+                            <button onclick="event.stopImmediatePropagation(); addToBuilderFromCard('${eff.id}');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-xl text-sm">+ Builder</button>
                             <button onclick="event.stopImmediatePropagation(); editEffect('${eff.id}');" class="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 rounded-xl text-sm">Edit</button>
                             <button onclick="event.stopImmediatePropagation(); deleteEffect('${eff.id}');" class="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded-xl text-sm">Delete</button>
                         </div>
@@ -575,6 +581,46 @@
                 `;
                 grid.appendChild(card);
             });
+        }
+
+        function addToBuilderFromCard(id) {
+            const eff = effects.find(e => e.id === id);
+            if (!eff) return;
+
+            // Add to builder if not already there
+            if (selectedBuilder.some(item => item.id === id)) {
+                showToast("Already in Builder");
+                return;
+            }
+
+            const promptToUse = eff.prompt && eff.prompt.trim() !== '' ? eff.prompt : eff.name;
+            selectedBuilder.push({ 
+                id: eff.id, 
+                name: eff.name, 
+                prompt: promptToUse, 
+                isCustom: false 
+            });
+
+            showToast("Added to Builder");
+            // Do NOT switch tabs - stay on Manage
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast px-6 py-3 bg-emerald-600 text-white rounded-2xl shadow-xl flex items-center gap-2 pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-check"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 1800);
         }
 
         function viewFullImage(src) {
@@ -864,7 +910,7 @@
             await initDB();
             await loadData();
             switchTab('manage');
-            log('🚀 v3.46 loaded with Prompt Builder polish');
+            log('🚀 v3.47 loaded with +Builder button + alignment');
         };
     </script>
 </body>
