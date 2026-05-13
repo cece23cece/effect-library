@@ -106,61 +106,61 @@ function getAllCategories() {
 }
 
 async function saveData() {
-    const tx = db.transaction('effects', 'readwrite');
-    const store = tx.objectStore('effects');
-    store.clear();
-    
-    for (const eff of effects) {
-        await new Promise(resolve => {
-            store.put(eff).onsuccess = resolve;
-        });
-    }
-    
-    updateHeaderCount();
+    return new Promise(async (resolve) => {
+        const tx = db.transaction('effects', 'readwrite');
+        const store = tx.objectStore('effects');
+        store.clear();
+        
+        for (const eff of effects) {
+            await new Promise(r => store.put(eff).onsuccess = r);
+        }
+        
+        tx.oncomplete = () => {
+            updateHeaderCount();
+            resolve();
+        };
+    });
 }
 
 async function saveCategories() {
-    const tx = db.transaction('categories', 'readwrite');
-    const store = tx.objectStore('categories');
-    store.clear();
-    
-    for (const cat of categories) {
-        await new Promise(resolve => {
-            store.put({ name: cat }).onsuccess = resolve;
-        });
-    }
+    return new Promise(async (resolve) => {
+        const tx = db.transaction('categories', 'readwrite');
+        const store = tx.objectStore('categories');
+        store.clear();
+        
+        for (const cat of categories) {
+            await new Promise(r => store.put({ name: cat }).onsuccess = r);
+        }
+        
+        tx.oncomplete = resolve;
+    });
 }
 
-// ==================== AGGRESSIVE EXPORT ====================
+// ==================== BULLETPROOF EXPORT & IMPORT ====================
 async function exportData() {
-    log("Starting aggressive export...");
+    log("Starting bulletproof export (v3.42)...");
     
-    // Force a completely fresh read from IndexedDB
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
     
-    log(`Fresh read: ${freshEffects.length} effects, ${freshCategories.length} categories`);
-
     if (freshEffects.length === 0) {
-        alert("⚠️ No effects found in database. Try adding an effect first, then export again.");
+        alert("⚠️ No effects found in database.");
         return;
     }
 
-    const exportEffects = freshEffects.map(eff => {
-        return {
-            id: eff.id,
-            name: eff.name,
-            category: eff.categories && eff.categories.length > 0 ? eff.categories[0] : (eff.category || "uncategorised"),
-            categories: eff.categories || (eff.category ? [eff.category] : ["uncategorised"]),
-            prompt: eff.prompt || '',
-            notes: eff.notes || '',
-            image: eff.image || null,
-            dateAdded: eff.dateAdded || new Date().toISOString()
-        };
-    });
+    const exportEffects = freshEffects.map(eff => ({
+        id: eff.id,
+        name: eff.name,
+        category: eff.categories && eff.categories.length > 0 ? eff.categories[0] : (eff.category || "uncategorised"),
+        categories: eff.categories || (eff.category ? [eff.category] : ["uncategorised"]),
+        prompt: eff.prompt || '',
+        notes: eff.notes || '',
+        image: eff.image || null,
+        dateAdded: eff.dateAdded || new Date().toISOString()
+    }));
 
     const data = {
-        version: "3.40",
+        version: "3.42",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -171,14 +171,13 @@ async function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `effect-library-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `effect-library-v3.42-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
     alert(`✅ Exported ${freshEffects.length} effects!`);
-    log(`Export complete: ${freshEffects.length} effects`);
 }
 
 function importData() {
@@ -203,6 +202,8 @@ function importData() {
                 if (!confirm(`Import ${importedData.effects.length} effects? This will replace current data.`)) {
                     return;
                 }
+                
+                log("Starting bulletproof import...");
                 
                 let cleanedEffects = importedData.effects.map(eff => {
                     let cats = [];
@@ -245,12 +246,19 @@ function importData() {
                 effects = cleanedEffects;
                 categories = cleanedCategories;
                 
+                log("Saving to IndexedDB...");
                 await saveData();
                 await saveCategories();
+                
+                // Force a re-read to verify
+                await new Promise(r => setTimeout(r, 300));
+                const verifyEffects = await getAllEffects();
+                
                 renderManageSidebar();
                 if (selectedCategory) renderMainEffects(selectedCategory);
                 
-                alert(`✅ Successfully imported ${effects.length} effects!`);
+                log(`Import complete: ${verifyEffects.length} effects saved`);
+                alert(`✅ Successfully imported and saved ${verifyEffects.length} effects!`);
                 
             } catch (err) {
                 alert("❌ Error importing file: " + err.message);
@@ -262,7 +270,7 @@ function importData() {
     input.click();
 }
 
-// ==================== REST OF FUNCTIONS ====================
+// ==================== REST OF FUNCTIONS (same as v3.41) ====================
 
 function switchTab(tab) {
     document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
@@ -461,7 +469,7 @@ function removeImage() {
     document.getElementById('image-upload').value = '';
 }
 
-function saveEffect(e) {
+async function saveEffect(e) {
     e.preventDefault();
     const name = toLower(document.getElementById('effect-name').value);
     if (!name) return alert("Effect name is required");
@@ -659,5 +667,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.40 loaded with File Separation');
+    log('🚀 v3.42 loaded with Bulletproof Import');
 };
