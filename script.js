@@ -134,7 +134,7 @@ async function saveCategories() {
 }
 
 async function exportData() {
-    log("Starting export (v3.50)...");
+    log("Starting export (v3.51)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData() {
     }));
 
     const data = {
-        version: "3.50",
+        version: "3.51",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -166,7 +166,7 @@ async function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `effect-library-v3.50-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `effect-library-v3.51-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -695,5 +695,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.50 loaded — split files');
+    log('🚀 v3.51 loaded — fixed categories');
 };
