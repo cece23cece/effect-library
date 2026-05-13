@@ -26,7 +26,6 @@ function getTotalCategoryLinks() {
     let total = 0;
     effects.forEach(e => {
         if (e.categories && e.categories.length > 0) total += e.categories.length;
-        else if (e.category) total += 1;
     });
     return total;
 }
@@ -77,14 +76,12 @@ function getAllEffects() {
         tx.objectStore('effects').getAll().onsuccess = e => {
             const raw = e.target.result || [];
             const fixed = raw.map(eff => {
-                if (eff.categories) {
-                    eff.categories = eff.categories.map(c => 
-                        (c && typeof c === 'object' && c.name) ? c.name : c
-                    );
+                // Migration: convert old singular category to categories array
+                if (eff.category && !eff.categories) {
+                    eff.categories = [eff.category];
+                    delete eff.category;
                 }
-                if (eff.category && typeof eff.category === 'object' && eff.category.name) {
-                    eff.category = eff.category.name;
-                }
+                if (!eff.categories) eff.categories = ["uncategorised"];
                 return eff;
             });
             resolve(fixed);
@@ -136,9 +133,8 @@ async function saveCategories() {
     });
 }
 
-// ==================== BULLETPROOF EXPORT & IMPORT ====================
 async function exportData() {
-    log("Starting bulletproof export (v3.44)...");
+    log("Starting export (v3.50)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -151,8 +147,7 @@ async function exportData() {
     const exportEffects = freshEffects.map(eff => ({
         id: eff.id,
         name: eff.name,
-        category: eff.categories && eff.categories.length > 0 ? eff.categories[0] : (eff.category || "uncategorised"),
-        categories: eff.categories || (eff.category ? [eff.category] : ["uncategorised"]),
+        categories: eff.categories || ["uncategorised"],
         prompt: eff.prompt || '',
         notes: eff.notes || '',
         image: eff.image || null,
@@ -160,7 +155,7 @@ async function exportData() {
     }));
 
     const data = {
-        version: "3.44",
+        version: "3.50",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -171,7 +166,7 @@ async function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `effect-library-v3.44-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `effect-library-v3.50-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -203,7 +198,7 @@ function importData() {
                     return;
                 }
                 
-                log("Starting bulletproof import...");
+                log("Starting import...");
                 
                 let cleanedEffects = importedData.effects.map(eff => {
                     let cats = [];
@@ -250,7 +245,6 @@ function importData() {
                 await saveData();
                 await saveCategories();
                 
-                // Force a re-read to verify
                 await new Promise(r => setTimeout(r, 300));
                 const verifyEffects = await getAllEffects();
                 
@@ -269,8 +263,6 @@ function importData() {
     };
     input.click();
 }
-
-// ==================== REST OF FUNCTIONS (same as v3.42) ====================
 
 function switchTab(tab) {
     document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
@@ -316,7 +308,7 @@ function renderManageSidebar() {
     container.innerHTML = '';
 
     getSortedCategories().forEach(cat => {
-        const count = effects.filter(e => (e.categories || [e.category || "uncategorised"]).includes(cat)).length;
+        const count = effects.filter(e => (e.categories || []).includes(cat)).length;
         const item = document.createElement('div');
 
         if (cat === "uncategorised") {
@@ -327,7 +319,7 @@ function renderManageSidebar() {
                     <span class="font-medium">${cat}</span>
                 </div>
                 <span class="text-xs text-slate-400">${count}</span>
-            </div>
+            `;
         } else {
             item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors ${selectedCategory === cat ? 'bg-zinc-800 text-white' : 'hover:bg-zinc-900'}`;
             item.innerHTML = `
@@ -336,7 +328,7 @@ function renderManageSidebar() {
                     <span>${cat}</span>
                 </div>
                 <span class="text-xs text-zinc-500">${count}</span>
-            </div>
+            `;
         }
 
         item.onclick = () => {
@@ -353,7 +345,7 @@ function renderMainEffects(cat) {
     const grid = document.getElementById('main-effects-grid');
     grid.innerHTML = '';
 
-    const filtered = effects.filter(e => (e.categories || [e.category || "uncategorised"]).includes(cat))
+    const filtered = effects.filter(e => (e.categories || []).includes(cat))
                           .sort((a, b) => a.name.localeCompare(b.name));
 
     if (filtered.length === 0) {
@@ -371,6 +363,7 @@ function renderMainEffects(cat) {
             <div class="p-4">
                 <h3 class="font-semibold text-sm">${eff.name}</h3>
                 <div class="flex gap-2 mt-4">
+                    <button onclick="event.stopImmediatePropagation(); addToBuilderFromCard('${eff.id}');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-xl text-sm">+ Builder</button>
                     <button onclick="event.stopImmediatePropagation(); editEffect('${eff.id}');" class="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 rounded-xl text-sm">Edit</button>
                     <button onclick="event.stopImmediatePropagation(); deleteEffect('${eff.id}');" class="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded-xl text-sm">Delete</button>
                 </div>
@@ -378,6 +371,44 @@ function renderMainEffects(cat) {
         `;
         grid.appendChild(card);
     });
+}
+
+function addToBuilderFromCard(id) {
+    const eff = effects.find(e => e.id === id);
+    if (!eff) return;
+
+    if (selectedBuilder.some(item => item.id === id)) {
+        showToast("Already in Builder");
+        return;
+    }
+
+    const promptToUse = eff.prompt && eff.prompt.trim() !== '' ? eff.prompt : eff.name;
+    selectedBuilder.push({ 
+        id: eff.id, 
+        name: eff.name, 
+        prompt: promptToUse, 
+        isCustom: false 
+    });
+
+    showToast("Added to Builder");
+}
+
+function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast px-6 py-3 bg-emerald-600 text-white rounded-2xl shadow-xl flex items-center gap-2 pointer-events-auto`;
+    toast.innerHTML = `
+        <i class="fa-solid fa-check"></i>
+        <span>${message}</span>
+    `;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.transition = 'all 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 1800);
 }
 
 function viewFullImage(src) {
@@ -424,7 +455,7 @@ function editEffect(id) {
     document.getElementById('prompt-text').value = eff.prompt || '';
     document.getElementById('notes-text').value = eff.notes || '';
 
-    renderCategoryCheckboxes(eff.categories || [eff.category || "uncategorised"]);
+    renderCategoryCheckboxes(eff.categories || []);
 
     if (eff.image) {
         document.getElementById('preview-img').src = eff.image;
@@ -542,9 +573,6 @@ function deleteCategory(cat) {
                 e.categories = ["uncategorised"];
             }
         }
-        if (e.category === cat) {
-            e.category = "uncategorised";
-        }
     });
 
     saveCategories();
@@ -567,7 +595,7 @@ function updateBuilderEffects() {
     const sel = document.getElementById('builder-effect');
     sel.innerHTML = '<option value="">Select effect...</option>';
     if (!cat) return;
-    effects.filter(e => (e.categories || [e.category || "uncategorised"]).includes(cat)).forEach(eff => {
+    effects.filter(e => (e.categories || []).includes(cat)).forEach(eff => {
         const opt = document.createElement('option');
         opt.value = eff.id; opt.textContent = eff.name; sel.appendChild(opt);
     });
@@ -663,25 +691,9 @@ function showStorageInfo() {
     alert(`Effects: ${effects.length}\nApprox size: ${size} KB`);
 }
 
-// ==================== ERROR HANDLING ====================
-function showError(message) {
-    const banner = document.getElementById('error-banner');
-    const msgEl = document.getElementById('error-message');
-    if (banner && msgEl) {
-        msgEl.textContent = message;
-        banner.classList.remove('hidden');
-    }
-    console.error(message);
-}
-
 window.onload = async function() {
-    try {
-        await initDB();
-        await loadData();
-        switchTab('manage');
-        log('🚀 v3.44 loaded with Error Reporting');
-    } catch (err) {
-        showError(err.message || 'Unknown error during startup');
-        log('❌ Startup error: ' + err.message);
-    }
+    await initDB();
+    await loadData();
+    switchTab('manage');
+    log('🚀 v3.50 loaded — split files');
 };
