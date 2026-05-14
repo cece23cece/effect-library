@@ -139,7 +139,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.63)...");
+    log("Starting export (v3.64)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -160,7 +160,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.63",
+        version: "3.64",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -178,7 +178,7 @@ async function exportData(autoBackup = false) {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const time = `${hours}-${minutes}`;
     
-    a.download = `effect-library_${date}_${time}.json`;
+    a.download = `EL_${date}_${time}.json`;
     
     document.body.appendChild(a);
     a.click();
@@ -724,5 +724,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.63 loaded — Full Title Case for all categories (including Uncategorised)');
+    log('🚀 v3.64 loaded — Filename shortened to EL_ for easier iPad viewing');
 };
