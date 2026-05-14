@@ -134,7 +134,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.52)...");
+    log("Starting export (v3.54)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.52",
+        version: "3.54",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -171,7 +171,7 @@ async function exportData(autoBackup = false) {
         const date = new Date().toISOString().split('T')[0];
         a.download = `effect-library-backup-${date}.json`;
     } else {
-        a.download = `effect-library-v3.52-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `effect-library-v3.54-${new Date().toISOString().split('T')[0]}.json`;
     }
     
     document.body.appendChild(a);
@@ -263,7 +263,6 @@ function importData() {
                 renderManageSidebar();
                 if (selectedCategory) renderMainEffects(selectedCategory);
                 
-                // IMPROVED FEEDBACK
                 const summary = `${verifyEffects.length} effects + ${cleanedCategories.length} categories imported successfully`;
                 showToast(summary);
                 alert(`✅ Import Complete!\n\n${summary}`);
@@ -304,6 +303,8 @@ function getSortedCategories() {
 function renderCategoryCheckboxes(selected = []) {
     const container = document.getElementById('category-checkboxes');
     container.innerHTML = '';
+    
+    // Clear any previous selection state
     getSortedCategories().forEach(cat => {
         if (cat === "uncategorised") return;
         const checked = selected.includes(cat) ? 'checked' : '';
@@ -452,6 +453,7 @@ function addNewEffect() {
     document.getElementById('save-btn').textContent = "Save Effect";
     document.getElementById('edit-form').reset();
 
+    // Only pre-select the currently viewed category
     const preselect = (selectedCategory && selectedCategory !== "uncategorised") ? [selectedCategory] : [];
     renderCategoryCheckboxes(preselect);
 
@@ -707,7 +709,6 @@ function showStorageInfo() {
     alert(`Effects: ${effects.length}\nApprox size: ${size} KB`);
 }
 
-// New Auto-backup button function
 window.autoBackup = function() {
     exportData(true);
 };
@@ -716,5 +717,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.52 loaded — improved import/export + fixed count');
+    log('🚀 v3.54 loaded — fixed auto-link bug');
 };
