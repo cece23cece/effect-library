@@ -11,7 +11,7 @@ let db = null;
 function log(msg) {
     const panel = document.getElementById('debug-panel');
     const ts = new Date().toLocaleTimeString();
-    panel.innerHTML += `<span class="text-zinc-500">[${ts}]</span> ${msg}<br>`;
+    panel.innerHTML += `<span class=\"text-zinc-500\">[${ts}]</span> ${msg}<br>`;
     panel.scrollTop = panel.scrollHeight;
     console.log(msg);
 }
@@ -21,6 +21,12 @@ function clearDebugLog() {
 }
 
 function toLower(str) { return (str || '').toString().trim().toLowerCase(); }
+
+function toTitleCase(str) {
+    if (!str) return '';
+    return str.toString().trim().toLowerCase()
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
 
 function getTotalCategoryLinks() {
     let total = 0;
@@ -134,7 +140,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.61)...");
+    log("Starting export (v3.62)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +161,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.61",
+        version: "3.62",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -223,9 +229,9 @@ function importData() {
                     }
                     
                     cats = cats.map(c => {
-                        if (typeof c === 'string') return c;
-                        if (c && typeof c === 'object' && c.name) return c.name;
-                        return String(c);
+                        if (typeof c === 'string') return toTitleCase(c);
+                        if (c && typeof c === 'object' && c.name) return toTitleCase(c.name);
+                        return toTitleCase(String(c));
                     }).filter(c => c && c.length > 0);
                     
                     if (cats.length === 0) cats = ["uncategorised"];
@@ -242,10 +248,10 @@ function importData() {
                 });
                 
                 let cleanedCategories = importedData.categories.map(c => {
-                    if (typeof c === 'string') return c;
-                    if (c && typeof c === 'object' && c.name) return c.name;
-                    return String(c);
-                }).filter(c => c && c.length > 0);
+                    if (typeof c === 'string') return toTitleCase(c);
+                    if (c && typeof c === 'object' && c.name) return toTitleCase(c.name);
+                    return toTitleCase(String(c));
+                }).filter(c => c && c.length > 0 && c.toLowerCase() !== "uncategorised");
                 
                 if (!cleanedCategories.includes("uncategorised")) {
                     cleanedCategories.push("uncategorised");
@@ -312,7 +318,7 @@ function renderCategoryCheckboxes(selected = []) {
         const checked = selected.includes(cat) ? 'checked' : '';
         const div = document.createElement('div');
         div.className = "flex items-center gap-2 text-sm";
-        div.innerHTML = `<input type="checkbox" value="${cat}" ${checked}> <label>${cat}</label>`;
+        div.innerHTML = `<input type=\"checkbox\" value=\"${cat}\" ${checked}> <label>${cat}</label>`;
         container.appendChild(div);
     });
 }
@@ -333,20 +339,20 @@ function renderManageSidebar() {
         if (cat === "uncategorised") {
             item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors uncategorised-item ${selectedCategory === cat ? 'ring-2 ring-indigo-500' : ''}`;
             item.innerHTML = `
-                <div class="flex items-center gap-x-2">
-                    <i class="fa-solid fa-inbox text-slate-400 text-sm"></i>
-                    <span class="font-medium">${cat}</span>
+                <div class=\"flex items-center gap-x-2\">
+                    <i class=\"fa-solid fa-inbox text-slate-400 text-sm\"></i>
+                    <span class=\"font-medium\">${cat}</span>
                 </div>
-                <span class="text-xs text-slate-400">${count}</span>
+                <span class=\"text-xs text-slate-400\">${count}</span>
             `;
         } else {
             item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors ${selectedCategory === cat ? 'ring-2 ring-indigo-500' : 'hover:bg-zinc-900'}`;
             item.innerHTML = `
-                <div class="flex items-center gap-x-2">
-                    <button onclick="event.stopImmediatePropagation(); deleteCategory('${cat}');" class="text-red-400 hover:text-red-500 mr-1 text-lg leading-none">×</button>
+                <div class=\"flex items-center gap-x-2\">
+                    <button onclick=\"event.stopImmediatePropagation(); deleteCategory('${cat}');\" class=\"text-red-400 hover:text-red-500 mr-1 text-lg leading-none\">×</button>
                     <span>${cat}</span>
                 </div>
-                <span class="text-xs text-zinc-500">${count}</span>
+                <span class=\"text-xs text-zinc-500\">${count}</span>
             `;
         }
 
@@ -368,7 +374,7 @@ function renderMainEffects(cat) {
                           .sort((a, b) => a.name.localeCompare(b.name));
 
     if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-20 text-zinc-500">No effects in this category yet</div>`;
+        grid.innerHTML = `<div class=\"col-span-full text-center py-20 text-zinc-500\">No effects in this category yet</div>`;
         return;
     }
 
@@ -376,15 +382,15 @@ function renderMainEffects(cat) {
         const card = document.createElement('div');
         card.className = "effect-card bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden cursor-pointer";
         card.innerHTML = `
-            <div class="aspect-[4/3] bg-zinc-900 flex items-center justify-center overflow-hidden" onclick="viewFullImage('${eff.image || ''}')">
-                ${eff.image ? `<img src="${eff.image}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-image text-6xl text-zinc-700"></i>`}
+            <div class=\"aspect-[4/3] bg-zinc-900 flex items-center justify-center overflow-hidden\" onclick=\"viewFullImage('${eff.image || ''}')\">
+                ${eff.image ? `<img src=\"${eff.image}\" class=\"w-full h-full object-cover\">` : `<i class=\"fa-solid fa-image text-6xl text-zinc-700\"></i>`}
             </div>
-            <div class="p-4">
-                <h3 class="font-semibold text-sm">${eff.name}</h3>
-                <div class="flex gap-2 mt-4">
-                    <button onclick="event.stopImmediatePropagation(); addToBuilderFromCard('${eff.id}');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-xl text-sm">+ Builder</button>
-                    <button onclick="event.stopImmediatePropagation(); editEffect('${eff.id}');" class="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 rounded-xl text-sm">Edit</button>
-                    <button onclick="event.stopImmediatePropagation(); deleteEffect('${eff.id}');" class="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded-xl text-sm">Delete</button>
+            <div class=\"p-4\">
+                <h3 class=\"font-semibold text-sm\">${eff.name}</h3>
+                <div class=\"flex gap-2 mt-4\">
+                    <button onclick=\"event.stopImmediatePropagation(); addToBuilderFromCard('${eff.id}');\" class=\"flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-xl text-sm\">+ Builder</button>
+                    <button onclick=\"event.stopImmediatePropagation(); editEffect('${eff.id}');\" class=\"flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 rounded-xl text-sm\">Edit</button>
+                    <button onclick=\"event.stopImmediatePropagation(); deleteEffect('${eff.id}');\" class=\"flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded-xl text-sm\">Delete</button>
                 </div>
             </div>
         `;
@@ -417,7 +423,7 @@ function showToast(message) {
     const toast = document.createElement('div');
     toast.className = `toast px-6 py-3 bg-emerald-600 text-white rounded-2xl shadow-xl flex items-center gap-2 pointer-events-auto`;
     toast.innerHTML = `
-        <i class="fa-solid fa-check"></i>
+        <i class=\"fa-solid fa-check\"></i>
         <span>${message}</span>
     `;
     container.appendChild(toast);
@@ -434,15 +440,16 @@ function viewFullImage(src) {
     if (!src) return;
     const modal = document.createElement('div');
     modal.className = "fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-4";
-    modal.innerHTML = `<img src="${src}" class="max-h-[90vh] max-w-[90vw] rounded-2xl cursor-pointer" onclick="this.parentElement.remove()">`;
+    modal.innerHTML = `<img src=\"${src}\" class=\"max-h-[90vh] max-w-[90vw] rounded-2xl cursor-pointer\" onclick=\"this.parentElement.remove()\">`;
     document.body.appendChild(modal);
 }
 
 function addNewCategory() {
     let name = prompt("New category name:");
     if (!name) return;
-    name = toLower(name);
+    name = toTitleCase(name);
     if (categories.includes(name)) return alert("Category already exists");
+    if (name.toLowerCase() === "uncategorised") return alert("Cannot create 'uncategorised' category");
     categories.push(name);
     saveCategories();
     renderManageSidebar();
@@ -654,7 +661,7 @@ function renderSelectedBuilder() {
         chip.className = `px-4 py-2.5 rounded-2xl flex items-center gap-2 text-sm draggable ${item.isCustom ? 'bg-emerald-900/70 text-emerald-100' : 'bg-zinc-800'}`;
         chip.draggable = true;
         chip.dataset.index = index;
-        chip.innerHTML = `${item.name} <button onclick="removeFromBuilder(${index})" class="ml-auto text-red-400">×</button>`;
+        chip.innerHTML = `${item.name} <button onclick=\"removeFromBuilder(${index})\" class=\"ml-auto text-red-400\">×</button>`;
         chip.ondragstart = (e) => e.dataTransfer.setData('text/plain', index);
         chip.ondragover = (e) => e.preventDefault();
         chip.ondrop = (e) => {
@@ -719,5 +726,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.61 loaded — timestamp now uses dash (10-19)');
+    log('🚀 v3.62 loaded — categories now forced to Title Case on add/import');
 };
