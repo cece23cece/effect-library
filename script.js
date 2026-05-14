@@ -63,11 +63,11 @@ async function loadData() {
     categories = await getAllCategories();
 
     if (categories.length === 0) {
-        categories = ["Art Style","Artists","Colours","Details","Fantasy","Fashion","Lighting","Perspective","People","Photography","Textures","Vintage", "uncategorised"];
+        categories = ["Art Style","Artists","Colours","Details","Fantasy","Fashion","Lighting","Perspective","People","Photography","Textures","Vintage", "Uncategorised"];
         await saveCategories();
     }
-    if (!categories.includes("uncategorised")) {
-        categories.push("uncategorised");
+    if (!categories.includes("Uncategorised")) {
+        categories.push("Uncategorised");
         await saveCategories();
     }
 
@@ -85,7 +85,7 @@ function getAllEffects() {
                     eff.categories = [eff.category];
                     delete eff.category;
                 }
-                if (!eff.categories) eff.categories = ["uncategorised"];
+                if (!eff.categories) eff.categories = ["Uncategorised"];
                 return eff;
             });
             resolve(fixed);
@@ -139,7 +139,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.62)...");
+    log("Starting export (v3.63)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -152,7 +152,7 @@ async function exportData(autoBackup = false) {
     const exportEffects = freshEffects.map(eff => ({
         id: eff.id,
         name: eff.name,
-        categories: eff.categories || ["uncategorised"],
+        categories: eff.categories || ["Uncategorised"],
         prompt: eff.prompt || '',
         notes: eff.notes || '',
         image: eff.image || null,
@@ -160,7 +160,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.62",
+        version: "3.63",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -227,13 +227,14 @@ function importData() {
                         cats = [eff.category];
                     }
                     
+                    // Force Title Case on every category attached to effects
                     cats = cats.map(c => {
-                        if (typeof c === 'string') return c;
-                        if (c && typeof c === 'object' && c.name) return c.name;
+                        if (typeof c === 'string') return toTitleCase(c);
+                        if (c && typeof c === 'object' && c.name) return toTitleCase(c.name);
                         return String(c);
                     }).filter(c => c && c.length > 0);
                     
-                    if (cats.length === 0) cats = ["uncategorised"];
+                    if (cats.length === 0) cats = ["Uncategorised"];
                     
                     return {
                         id: eff.id || 'eff_' + Date.now() + Math.random(),
@@ -246,16 +247,15 @@ function importData() {
                     };
                 });
                 
+                // Force Title Case on master category list
                 let cleanedCategories = importedData.categories.map(c => {
-                    if (typeof c === 'string') return c;
-                    if (c && typeof c === 'object' && c.name) return c.name;
+                    if (typeof c === 'string') return toTitleCase(c);
+                    if (c && typeof c === 'object' && c.name) return toTitleCase(c.name);
                     return String(c);
                 }).filter(c => c && c.length > 0);
                 
-                cleanedCategories = cleanedCategories.map(c => toTitleCase(c));
-                
-                if (!cleanedCategories.includes("uncategorised")) {
-                    cleanedCategories.push("uncategorised");
+                if (!cleanedCategories.includes("Uncategorised")) {
+                    cleanedCategories.push("Uncategorised");
                 }
                 
                 effects = cleanedEffects;
@@ -295,7 +295,7 @@ function switchTab(tab) {
     document.getElementById('tab-' + tab).classList.add('active');
 
     if (tab === 'manage') {
-        if (!selectedCategory) selectedCategory = "uncategorised";
+        if (!selectedCategory) selectedCategory = "Uncategorised";
         renderManageSidebar();
         renderMainEffects(selectedCategory);
     }
@@ -303,9 +303,9 @@ function switchTab(tab) {
 }
 
 function getSortedCategories() {
-    let sorted = [...categories].filter(c => c !== "uncategorised");
+    let sorted = [...categories].filter(c => c !== "Uncategorised");
     sorted.sort();
-    if (categories.includes("uncategorised")) sorted.unshift("uncategorised");
+    if (categories.includes("Uncategorised")) sorted.unshift("Uncategorised");
     return sorted;
 }
 
@@ -313,9 +313,8 @@ function renderCategoryCheckboxes(selected = []) {
     const container = document.getElementById('category-checkboxes');
     container.innerHTML = '';
     
-    // Clear any previous selection state
     getSortedCategories().forEach(cat => {
-        if (cat === "uncategorised") return;
+        if (cat === "Uncategorised") return;
         const checked = selected.includes(cat) ? 'checked' : '';
         const div = document.createElement('div');
         div.className = "flex items-center gap-2 text-sm";
@@ -326,7 +325,7 @@ function renderCategoryCheckboxes(selected = []) {
 
 function getSelectedCategories() {
     const checked = Array.from(document.querySelectorAll('#category-checkboxes input:checked')).map(cb => cb.value);
-    return checked.length > 0 ? checked : ["uncategorised"];
+    return checked.length > 0 ? checked : ["Uncategorised"];
 }
 
 function renderManageSidebar() {
@@ -337,7 +336,7 @@ function renderManageSidebar() {
         const count = effects.filter(e => (e.categories || []).includes(cat)).length;
         const item = document.createElement('div');
 
-        if (cat === "uncategorised") {
+        if (cat === "Uncategorised") {
             item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors uncategorised-item ${selectedCategory === cat ? 'ring-2 ring-indigo-500' : ''}`;
             item.innerHTML = `
                 <div class=\"flex items-center gap-x-2\">
@@ -462,8 +461,7 @@ function addNewEffect() {
     document.getElementById('save-btn').textContent = "Save Effect";
     document.getElementById('edit-form').reset();
 
-    // Only pre-select the currently viewed category
-    const preselect = (selectedCategory && selectedCategory !== "uncategorised") ? [selectedCategory] : [];
+    const preselect = (selectedCategory && selectedCategory !== "Uncategorised") ? [selectedCategory] : [];
     renderCategoryCheckboxes(preselect);
 
     document.getElementById('edit-modal').classList.remove('hidden');
@@ -572,7 +570,7 @@ async function saveEffect(e) {
     await saveData();
     closeModal();
     renderManageSidebar();
-    renderMainEffects(selectedCategory || "uncategorised");
+    renderMainEffects(selectedCategory || "Uncategorised");
 }
 
 function closeModal() {
@@ -586,7 +584,7 @@ function deleteEffect(id) {
     effects = effects.filter(e => e.id !== id);
     saveData();
     renderManageSidebar();
-    renderMainEffects(selectedCategory || "uncategorised");
+    renderMainEffects(selectedCategory || "Uncategorised");
 }
 
 function deleteCategory(cat) {
@@ -597,15 +595,15 @@ function deleteCategory(cat) {
         if (e.categories) {
             e.categories = e.categories.filter(c => c !== cat);
             if (e.categories.length === 0) {
-                e.categories = ["uncategorised"];
+                e.categories = ["Uncategorised"];
             }
         }
     });
 
     saveCategories();
-    selectedCategory = "uncategorised";
+    selectedCategory = "Uncategorised";
     renderManageSidebar();
-    renderMainEffects("uncategorised");
+    renderMainEffects("Uncategorised");
 }
 
 function updateBuilderCategory() {
@@ -726,5 +724,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.62 loaded — Title Case for categories enabled');
+    log('🚀 v3.63 loaded — Full Title Case for all categories (including Uncategorised)');
 };
