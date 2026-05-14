@@ -134,7 +134,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.60)...");
+    log("Starting export (v3.61)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.60",
+        version: "3.61",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -171,7 +171,7 @@ async function exportData(autoBackup = false) {
     const date = now.toISOString().split('T')[0];
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    const time = `${hours}:${minutes}`;
+    const time = `${hours}-${minutes}`;
     
     a.download = `effect-library_${date}_${time}.json`;
     
@@ -719,5 +719,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.60 loaded — timestamp now uses colon (10:19)');
+    log('🚀 v3.61 loaded — timestamp now uses dash (10-19)');
 };
