@@ -134,7 +134,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.58)...");
+    log("Starting export (v3.59)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.58",
+        version: "3.59",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -331,7 +331,7 @@ function renderManageSidebar() {
         const item = document.createElement('div');
 
         if (cat === "uncategorised") {
-            item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors uncategorised-item ${selectedCategory === cat ? 'ring-1 ring-slate-400' : ''}`;
+            item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors uncategorised-item ${selectedCategory === cat ? 'ring-2 ring-indigo-500' : ''}`;
             item.innerHTML = `
                 <div class="flex items-center gap-x-2">
                     <i class="fa-solid fa-inbox text-slate-400 text-sm"></i>
@@ -719,5 +719,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.58 loaded — bluish focus ring on category selection');
+    log('🚀 v3.59 loaded — uncategorised now also has bluish focus ring');
 };
