@@ -1,54 +1,196 @@
-<!-- PROMPT BUILDER -->
-<div id="section-builder" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
-    <div class="max-w-4xl mx-auto">
-        <h2 class="text-2xl font-semibold mb-2">Prompt Builder</h2>
-        <p class="text-zinc-400 mb-8">Build your prompt in order • Drag to reorder</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Effect Library • v3.65</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-zinc-950 text-zinc-200">
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label class="block text-sm mb-2 text-zinc-400">1. Category</label>
-                    <select id="builder-category" onchange="updateBuilderEffects()" class="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 h-[56px]"></select>
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none"></div>
+
+    <div class="border-b border-zinc-800 bg-zinc-900">
+        <div class="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-indigo-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-images text-white text-xl"></i>
                 </div>
                 <div>
-                    <label class="block text-sm mb-2 text-zinc-400">2. Effect</label>
+                    <h1 class="font-display text-2xl font-semibold tracking-tight">Effect Library</h1>
+                    <p class="text-xs text-zinc-500 -mt-1">v3.65</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-x-3">
+                <div class="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs flex items-center gap-x-2">
+                    <i class="fa-solid fa-database text-emerald-400"></i>
+                    <span id="total-count">0 effects • 0 links</span>
+                </div>
+                
+                <button onclick="exportData()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs flex items-center gap-x-2">
+                    <i class="fa-solid fa-download"></i> Export
+                </button>
+                <button onclick="importData()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs flex items-center gap-x-2">
+                    <i class="fa-solid fa-upload"></i> Import
+                </button>
+                
+                <button onclick="showStorageInfo()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs">Storage</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-screen-xl mx-auto px-6 pt-6">
+        <div class="flex border-b border-zinc-800 text-sm gap-x-1 bg-zinc-950 p-1 rounded-3xl w-fit">
+            <button onclick="switchTab('manage')" id="tab-manage" class="nav-tab active px-6 py-3 flex items-center gap-x-2"><i class="fa-solid fa-folder-tree"></i> Manage</button>
+            <button onclick="switchTab('builder')" id="tab-builder" class="nav-tab px-6 py-3 flex items-center gap-x-2 text-zinc-400 hover:text-zinc-200"><i class="fa-solid fa-magic"></i> Prompt Builder</button>
+        </div>
+    </div>
+
+    <div id="section-manage" class="max-w-screen-xl mx-auto px-6 py-6">
+        <div class="flex h-[calc(100vh-180px)] gap-4">
+            <div class="w-56 bg-zinc-900 border border-zinc-800 rounded-3xl p-4 overflow-auto">
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <h3 class="font-semibold text-lg">Categories</h3>
+                    <button onclick="addNewCategory()" class="text-indigo-400 hover:text-indigo-300">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div id="sidebar-categories" class="space-y-1"></div>
+            </div>
+
+            <div class="flex-1 bg-zinc-900 border border-zinc-800 rounded-3xl p-4 overflow-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="current-category-title" class="text-2xl font-semibold">Select a category</h2>
+                    <button onclick="addNewEffect()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-2xl flex items-center gap-x-2">
+                        <i class="fa-solid fa-plus"></i> Add Effect
+                    </button>
+                </div>
+                <div id="main-effects-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROMPT BUILDER -->
+    <div id="section-builder" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-semibold mb-2">Prompt Builder</h2>
+            <p class="text-zinc-400 mb-8">Build your prompt in order • Drag to reorder</p>
+
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm mb-2 text-zinc-400">1. Category</label>
+                        <select id="builder-category" onchange="updateBuilderEffects()" class="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 h-[56px]"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2 text-zinc-400">2. Effect</label>
+                        <div class="flex gap-3 items-end">
+                            <select id="builder-effect" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 h-[56px]"></select>
+                            <button onclick="addToBuilder()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[56px] flex items-center justify-center min-w-[140px]">Add Effect</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">3. Extra Instructions / Custom Phrase</label>
                     <div class="flex gap-3 items-end">
-                        <select id="builder-effect" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 h-[56px]"></select>
-                        <button onclick="addToBuilder()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[56px] flex items-center justify-center min-w-[140px]">Add Effect</button>
+                        <textarea id="extra-instructions" rows="2" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 resize-y h-[56px]"></textarea>
+                        <button onclick="addCustomPhrase()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[56px] flex items-center justify-center min-w-[140px]">Add Phrase</button>
                     </div>
                 </div>
             </div>
 
-            <div>
-                <label class="block text-sm mb-2 text-zinc-400">3. Extra Instructions / Custom Phrase</label>
-                <div class="flex gap-3 items-end">
-                    <textarea id="extra-instructions" rows="2" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 resize-y h-[56px]"></textarea>
-                    <button onclick="addCustomPhrase()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[56px] flex items-center justify-center min-w-[140px]">Add Phrase</button>
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-medium">Prompt Sequence (drag to reorder)</span>
+                    <button onclick="clearBuilder()" class="text-red-400 hover:text-red-500 text-sm">Clear All</button>
                 </div>
+                <div id="selected-builder-list" class="flex flex-wrap gap-3 min-h-[320px] bg-zinc-950 border border-zinc-700 rounded-2xl p-6"></div>
             </div>
-        </div>
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <span class="font-medium">Prompt Sequence (drag to reorder)</span>
-                <button onclick="clearBuilder()" class="text-red-400 hover:text-red-500 text-sm">Clear All</button>
-            </div>
-            <div id="selected-builder-list" class="flex flex-wrap gap-2 max-h-[280px] overflow-y-auto bg-zinc-950 border border-zinc-700 rounded-2xl p-4"></div>
-        </div>
+            <button onclick="generatePrompt()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-5 rounded-3xl font-semibold text-lg mb-8">
+                Generate Prompt
+            </button>
 
-        <button onclick="generatePrompt()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-5 rounded-3xl font-semibold text-lg mb-8">
-            Generate Prompt
-        </button>
-
-        <div id="generated-prompt-container" class="hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-            <div class="flex justify-between mb-4">
-                <span class="font-medium">Generated Prompt</span>
-                <div class="flex gap-2">
-                    <button onclick="clearGeneratedPrompt()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm">Clear</button>
-                    <button onclick="copyPrompt()" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm">Copy</button>
+            <div id="generated-prompt-container" class="hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+                <div class="flex justify-between mb-4">
+                    <span class="font-medium">Generated Prompt</span>
+                    <div class="flex gap-2">
+                        <button onclick="clearGeneratedPrompt()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm">Clear</button>
+                        <button onclick="copyPrompt()" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm">Copy</button>
+                    </div>
                 </div>
+                <div id="generated-prompt" class="bg-zinc-950 p-6 rounded-2xl text-sm whitespace-pre-wrap"></div>
             </div>
-            <div id="generated-prompt" class="bg-zinc-950 p-6 rounded-2xl text-sm whitespace-pre-wrap"></div>
         </div>
     </div>
-</div>
+
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <div class="p-6 border-b border-zinc-800 flex justify-between items-center">
+                <h3 id="modal-title" class="text-xl font-semibold">Add New Effect</h3>
+                <button onclick="closeModal()" class="text-zinc-400 hover:text-white text-2xl">×</button>
+            </div>
+            <form id="edit-form" onsubmit="saveEffect(event)" class="p-6 space-y-6">
+                <input type="hidden" id="edit-id">
+
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">Effect Name</label>
+                    <input type="text" id="effect-name" required class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3">
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">Categories <span class="text-zinc-500">(select multiple — leave empty for uncategorised)</span></label>
+                    <div id="category-checkboxes" class="grid grid-cols-2 gap-2 max-h-60 overflow-auto bg-zinc-950 border border-zinc-800 rounded-2xl p-4"></div>
+                    <p class="text-[10px] text-zinc-500 mt-1 px-1">If nothing is selected, the effect will go to uncategorised.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">Prompt <span class="text-zinc-500">(optional – only used in Prompt Builder)</span></label>
+                    <textarea id="prompt-text" rows="3" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">Notes</label>
+                    <textarea id="notes-text" rows="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">Reference Image <span class="text-zinc-500">(optional)</span></label>
+                    <div id="image-upload-area" class="border-2 border-dashed border-zinc-700 rounded-3xl p-8 text-center hover:border-zinc-600 cursor-pointer transition-colors"
+                         onclick="document.getElementById('image-upload').click()">
+                        <i class="fa-solid fa-cloud-upload-alt text-4xl text-zinc-600"></i>
+                        <p class="text-zinc-400 mt-2">Click to upload image</p>
+                    </div>
+
+                    <div id="image-preview" class="hidden mt-4">
+                        <img id="preview-img" class="max-h-64 mx-auto rounded-2xl border border-zinc-700 w-full object-contain">
+                        <div class="flex justify-center gap-4 mt-4">
+                            <button type="button" onclick="replaceImage()" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm">Replace Image</button>
+                            <button type="button" onclick="removeImage()" class="px-5 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-2xl text-sm">Remove Image</button>
+                        </div>
+                    </div>
+                    <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageSelect(this)">
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" id="save-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-4 rounded-3xl font-semibold">Save Effect</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 py-4 rounded-3xl font-semibold">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="fixed bottom-4 right-4 bg-zinc-900 border border-zinc-700 rounded-3xl p-4 w-80 max-h-[45vh] overflow-auto shadow-2xl z-[9999]">
+        <div class="flex justify-between items-center mb-3 border-b border-zinc-700 pb-2">
+            <span class="font-semibold text-emerald-400">🔍 Debug v3.65</span>
+            <button onclick="clearDebugLog()" class="text-xs text-zinc-500 hover:text-zinc-300">Clear</button>
+        </div>
+        <div id="debug-panel" class="text-emerald-300/90 whitespace-pre-wrap"></div>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
