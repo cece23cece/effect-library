@@ -76,7 +76,6 @@ function getAllEffects() {
         tx.objectStore('effects').getAll().onsuccess = e => {
             const raw = e.target.result || [];
             const fixed = raw.map(eff => {
-                // Migration: convert old singular category to categories array
                 if (eff.category && !eff.categories) {
                     eff.categories = [eff.category];
                     delete eff.category;
@@ -133,8 +132,9 @@ async function saveCategories() {
     });
 }
 
-async function exportData() {
-    log("Starting export (v3.51)...");
+// ==================== IMPROVED EXPORT ====================
+async function exportData(autoBackup = false) {
+    log("Starting export (v3.52)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData() {
     }));
 
     const data = {
-        version: "3.51",
+        version: "3.52",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -166,15 +166,27 @@ async function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `effect-library-v3.51-${new Date().toISOString().split('T')[0]}.json`;
+    
+    if (autoBackup) {
+        const date = new Date().toISOString().split('T')[0];
+        a.download = `effect-library-backup-${date}.json`;
+    } else {
+        a.download = `effect-library-v3.52-${new Date().toISOString().split('T')[0]}.json`;
+    }
+    
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    alert(`✅ Exported ${freshEffects.length} effects!`);
+    if (autoBackup) {
+        showToast(`✅ Auto-backup created (${freshEffects.length} effects)`);
+    } else {
+        alert(`✅ Exported ${freshEffects.length} effects!`);
+    }
 }
 
+// ==================== IMPROVED IMPORT ====================
 function importData() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -251,8 +263,12 @@ function importData() {
                 renderManageSidebar();
                 if (selectedCategory) renderMainEffects(selectedCategory);
                 
+                // IMPROVED FEEDBACK
+                const summary = `${verifyEffects.length} effects + ${cleanedCategories.length} categories imported successfully`;
+                showToast(summary);
+                alert(`✅ Import Complete!\n\n${summary}`);
+                
                 log(`Import complete: ${verifyEffects.length} effects saved`);
-                alert(`✅ Successfully imported and saved ${verifyEffects.length} effects!`);
                 
             } catch (err) {
                 alert("❌ Error importing file: " + err.message);
@@ -691,9 +707,14 @@ function showStorageInfo() {
     alert(`Effects: ${effects.length}\nApprox size: ${size} KB`);
 }
 
+// New Auto-backup button function
+window.autoBackup = function() {
+    exportData(true);
+};
+
 window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.51 loaded — fixed categories');
+    log('🚀 v3.52 loaded — improved import/export + fixed count');
 };
