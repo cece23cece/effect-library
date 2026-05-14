@@ -134,7 +134,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.55)...");
+    log("Starting export (v3.56)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.55",
+        version: "3.56",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -169,12 +169,14 @@ async function exportData(autoBackup = false) {
     
     const now = new Date();
     const date = now.toISOString().split('T')[0];
-    const time = now.toTimeString().slice(0, 5).replace(':', '-');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const time = `${hours}:${minutes}`;
     
     if (autoBackup) {
-        a.download = `effect-library-backup-${date}_${time}.json`;
+        a.download = `effect-library-${date}-${time}.json`;
     } else {
-        a.download = `effect-library-v3.55-${date}.json`;
+        a.download = `effect-library-${date}-${time}.json`;
     }
     
     document.body.appendChild(a);
@@ -284,6 +286,7 @@ function importData() {
 
 function switchTab(tab) {
     document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
+    document.getElementById('section-' + tab).classList.remove('hidden');
     document.getElementById('section-' + tab).classList.remove('hidden');
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
@@ -720,5 +723,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.55 loaded — timestamped backups');
+    log('🚀 v3.56 loaded — simplified backup filenames');
 };
