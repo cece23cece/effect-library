@@ -134,7 +134,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.54)...");
+    log("Starting export (v3.55)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.54",
+        version: "3.55",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -167,11 +167,14 @@ async function exportData(autoBackup = false) {
     const a = document.createElement('a');
     a.href = url;
     
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().slice(0, 5).replace(':', '-');
+    
     if (autoBackup) {
-        const date = new Date().toISOString().split('T')[0];
-        a.download = `effect-library-backup-${date}.json`;
+        a.download = `effect-library-backup-${date}_${time}.json`;
     } else {
-        a.download = `effect-library-v3.54-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `effect-library-v3.55-${date}.json`;
     }
     
     document.body.appendChild(a);
@@ -717,5 +720,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.54 loaded — fixed auto-link bug');
+    log('🚀 v3.55 loaded — timestamped backups');
 };
