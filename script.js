@@ -134,7 +134,7 @@ async function saveCategories() {
 
 // ==================== IMPROVED EXPORT ====================
 async function exportData(autoBackup = false) {
-    log("Starting export (v3.57)...");
+    log("Starting export (v3.58)...");
     
     const freshEffects = await getAllEffects();
     const freshCategories = await getAllCategories();
@@ -155,7 +155,7 @@ async function exportData(autoBackup = false) {
     }));
 
     const data = {
-        version: "3.57",
+        version: "3.58",
         exportedAt: new Date().toISOString(),
         categories: freshCategories,
         effects: exportEffects
@@ -340,7 +340,7 @@ function renderManageSidebar() {
                 <span class="text-xs text-slate-400">${count}</span>
             `;
         } else {
-            item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors ${selectedCategory === cat ? 'bg-zinc-800 text-white' : 'hover:bg-zinc-900'}`;
+            item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors ${selectedCategory === cat ? 'ring-2 ring-indigo-500' : 'hover:bg-zinc-900'}`;
             item.innerHTML = `
                 <div class="flex items-center gap-x-2">
                     <button onclick="event.stopImmediatePropagation(); deleteCategory('${cat}');" class="text-red-400 hover:text-red-500 mr-1 text-lg leading-none">×</button>
@@ -719,5 +719,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.57 loaded — final backup filename format');
+    log('🚀 v3.58 loaded — bluish focus ring on category selection');
 };
