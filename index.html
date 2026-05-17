@@ -28,12 +28,24 @@
                     <i class="fa-solid fa-database text-emerald-400"></i>
                     <span id="total-count">0 effects • 0 links</span>
                 </div>
+                
                 <button onclick="exportData()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs flex items-center gap-x-2">
                     <i class="fa-solid fa-download"></i> Export
                 </button>
                 <button onclick="importData()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs flex items-center gap-x-2">
                     <i class="fa-solid fa-upload"></i> Import
                 </button>
+                
+                <!-- NEW: Full Backup button -->
+                <button onclick="fullAppBackup()" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-2xl text-xs flex items-center gap-x-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Full Backup
+                </button>
+                
+                <!-- NEW: Force Reload button -->
+                <button onclick="forceReloadFromStorage()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-2xl text-xs flex items-center gap-x-2">
+                    <i class="fa-solid fa-sync"></i> Reload Storage
+                </button>
+
                 <button onclick="showStorageInfo()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs">Storage</button>
             </div>
         </div>
@@ -71,7 +83,7 @@
         </div>
     </div>
 
-    <!-- PROMPT BUILDER SECTION (FULL ORIGINAL) -->
+    <!-- PROMPT BUILDER SECTION -->
     <div id="section-builder" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-semibold mb-2">Prompt Builder</h2>
