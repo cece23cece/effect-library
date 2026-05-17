@@ -137,62 +137,67 @@ async function saveCategories() {
     });
 }
 
-// ==================== IMPROVED EXPORT ====================
-async function exportData(autoBackup = false) {
-    log("Starting export (v3.65)...");
-    
-    const freshEffects = await getAllEffects();
-    const freshCategories = await getAllCategories();
-    
-    if (freshEffects.length === 0) {
-        alert("⚠️ No effects found in database.");
+// ==================== RENDER FUNCTIONS (RESTORED) ====================
+function renderManageSidebar() {
+    const container = document.getElementById('sidebar-categories');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const sorted = [...categories].sort();
+    if (sorted.includes("Uncategorised")) {
+        sorted.splice(sorted.indexOf("Uncategorised"), 1);
+        sorted.unshift("Uncategorised");
+    }
+
+    sorted.forEach(cat => {
+        const count = effects.filter(e => (e.categories || []).includes(cat)).length;
+        const item = document.createElement('div');
+        item.className = `px-4 py-3 rounded-2xl cursor-pointer flex justify-between items-center transition-colors ${selectedCategory === cat ? 'ring-2 ring-indigo-500 bg-zinc-800' : 'hover:bg-zinc-900'}`;
+        item.innerHTML = `
+            <div class="flex items-center gap-x-2">
+                <span class="font-medium">${cat}</span>
+            </div>
+            <span class="text-xs text-zinc-400">${count}</span>
+        `;
+        item.onclick = () => {
+            selectedCategory = cat;
+            renderManageSidebar();
+            renderMainEffects(cat);
+        };
+        container.appendChild(item);
+    });
+}
+
+function renderMainEffects(category) {
+    const grid = document.getElementById('main-effects-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const filtered = effects.filter(e => (e.categories || []).includes(category));
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-400">No effects in this category yet.</div>`;
         return;
     }
 
-    const exportEffects = freshEffects.map(eff => ({
-        id: eff.id,
-        name: eff.name,
-        categories: eff.categories || ["Uncategorised"],
-        prompt: eff.prompt || '',
-        notes: eff.notes || '',
-        image: eff.image || null,
-        dateAdded: eff.dateAdded || new Date().toISOString()
-    }));
-
-    const data = {
-        version: "3.65",
-        exportedAt: new Date().toISOString(),
-        categories: freshCategories,
-        effects: exportEffects
-    };
-    
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    
-    const now = new Date();
-    const date = now.toISOString().split('T')[0];
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const time = `${hours}-${minutes}`;
-    
-    a.download = `EL_${date}_${time}.json`;
-    
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    if (autoBackup) {
-        showToast(`✅ Auto-backup created (${freshEffects.length} effects)`);
-    } else {
-        alert(`✅ Exported ${freshEffects.length} effects!`);
-    }
+    filtered.forEach(effect => {
+        const card = document.createElement('div');
+        card.className = 'effect-card bg-zinc-900 border border-zinc-700 rounded-3xl p-5 cursor-pointer';
+        card.innerHTML = `
+            <div class="font-semibold mb-1">${effect.name}</div>
+            <div class="text-xs text-zinc-500 mb-3">${(effect.categories || []).join(', ')}</div>
+            ${effect.image ? `<img src="${effect.image}" class="w-full h-40 object-cover rounded-2xl mb-3">` : ''}
+            <div class="flex gap-2">
+                <button onclick="event.stopImmediatePropagation(); editEffect('${effect.id}')" class="text-xs px-3 py-1 bg-zinc-800 rounded-xl">Edit</button>
+                <button onclick="event.stopImmediatePropagation(); deleteEffect('${effect.id}')" class="text-xs px-3 py-1 bg-red-900/30 text-red-400 rounded-xl">Delete</button>
+            </div>
+        `;
+        card.onclick = () => editEffect(effect.id);
+        grid.appendChild(card);
+    });
 }
 
-// ==================== IMPROVED IMPORT ====================
+// ==================== IMPORT (WITH RENDER CALLS) ====================
 function importData() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -216,23 +221,9 @@ function importData() {
                     return;
                 }
                 
-                log("Starting import...");
-                
                 let cleanedEffects = importedData.effects.map(eff => {
-                    let cats = [];
-                    
-                    if (eff.categories && Array.isArray(eff.categories)) {
-                        cats = eff.categories;
-                    } else if (eff.category && typeof eff.category === 'string') {
-                        cats = [eff.category];
-                    }
-                    
-                    cats = cats.map(c => {
-                        if (typeof c === 'string') return toTitleCase(c);
-                        if (c && typeof c === 'object' && c.name) return toTitleCase(c.name);
-                        return String(c);
-                    }).filter(c => c && c.length > 0);
-                    
+                    let cats = eff.categories || (eff.category ? [eff.category] : []);
+                    cats = cats.map(c => typeof c === 'string' ? toTitleCase(c) : c).filter(Boolean);
                     if (cats.length === 0) cats = ["Uncategorised"];
                     
                     return {
@@ -245,37 +236,24 @@ function importData() {
                         dateAdded: eff.dateAdded || new Date().toISOString()
                     };
                 });
-                
-                let cleanedCategories = importedData.categories.map(c => {
-                    if (typeof c === 'string') return toTitleCase(c);
-                    if (c && typeof c === 'object' && c.name) return toTitleCase(c.name);
-                    return String(c);
-                }).filter(c => c && c.length > 0);
-                
-                if (!cleanedCategories.includes("Uncategorised")) {
-                    cleanedCategories.push("Uncategorised");
-                }
-                
+
+                let cleanedCategories = importedData.categories.map(c => typeof c === 'string' ? toTitleCase(c) : c).filter(Boolean);
+                if (!cleanedCategories.includes("Uncategorised")) cleanedCategories.push("Uncategorised");
+
                 effects = cleanedEffects;
                 categories = cleanedCategories;
-                
-                log("Saving to IndexedDB...");
+
                 await saveData();
                 await saveCategories();
-                
-                await new Promise(r => setTimeout(r, 300));
-                const verifyEffects = await getAllEffects();
-                
-                if (typeof renderManageSidebar === 'function') renderManageSidebar();
-                if (typeof renderMainEffects === 'function' && selectedCategory) renderMainEffects(selectedCategory);
-                
-                const summary = `${verifyEffects.length} effects + ${cleanedCategories.length} categories imported successfully`;
-                if (typeof showToast === 'function') showToast(summary);
-                alert(`✅ Import Complete!\n\n${summary}`);
-                
+
+                selectedCategory = "Uncategorised";
+                renderManageSidebar();
+                renderMainEffects("Uncategorised");
+
+                alert(`✅ Import Complete! ${effects.length} effects restored.`);
+
             } catch (err) {
-                alert("❌ Error importing file: " + err.message);
-                log("Import error: " + err.message);
+                alert("❌ Import error: " + err.message);
             }
         };
         reader.readAsText(file);
@@ -283,9 +261,7 @@ function importData() {
     input.click();
 }
 
-// Add other functions as needed from stable v3.65
-// (Sources, render functions, etc. can be added after stable restore is confirmed)
-
+// ==================== BASIC HELPERS ====================
 function switchTab(tab) {
     document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
     document.getElementById('section-' + tab).classList.remove('hidden');
@@ -294,8 +270,8 @@ function switchTab(tab) {
 
     if (tab === 'manage') {
         if (!selectedCategory) selectedCategory = "Uncategorised";
-        if (typeof renderManageSidebar === 'function') renderManageSidebar();
-        if (typeof renderMainEffects === 'function') renderMainEffects(selectedCategory);
+        renderManageSidebar();
+        renderMainEffects(selectedCategory);
     }
 }
 
@@ -303,5 +279,5 @@ window.onload = async function() {
     await initDB();
     await loadData();
     switchTab('manage');
-    log('🚀 v3.65 stable restored as requested');
+    log('🚀 v3.65 + render fix loaded');
 };
