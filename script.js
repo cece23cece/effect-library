@@ -1,152 +1,167 @@
-// Full updated script.js with Sources and Backup functionality - see full code below
 // =============================================
-// Effect Library - Full Script v3.68
+// Effect Library - Full Script v3.68 (Stable Restore)
+// Restores original working Import + category rebuilding
+// + Sources tab functionality
 // =============================================
 
 let effects = [];
-let categories = ["All Effects"];
+let categories = [];
 let sources = [];
-let currentCategory = "All Effects";
+let selectedCategory = null;
 let db = null;
 
-// ==================== IndexedDB Setup ====================
-async function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open("EffectLibraryDB", 6);
+// ==================== IndexedDB ====================
+function initDB() {
+    return new Promise((resolve) => {
+        const request = indexedDB.open('EffectLibraryDB', 5);
         request.onupgradeneeded = (e) => {
             db = e.target.result;
-            if (!db.objectStoreNames.contains("sources")) {
-                db.createObjectStore("sources", { keyPath: "id" });
+            if (!db.objectStoreNames.contains('effects')) {
+                db.createObjectStore('effects', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('categories')) {
+                db.createObjectStore('categories', { keyPath: 'name' });
+            }
+            if (!db.objectStoreNames.contains('sources')) {
+                db.createObjectStore('sources', { keyPath: 'id' });
             }
         };
         request.onsuccess = (e) => {
             db = e.target.result;
             resolve();
         };
-        request.onerror = (e) => reject(e);
     });
 }
 
-// Load Sources
-async function loadSources() {
-    if (!db) await initDB();
+async function loadData() {
+    effects = await getAllEffects();
+    categories = await getAllCategories();
+    if (categories.length === 0) {
+        categories = ["Art Style","Artists","Colours","Details","Fantasy","Fashion","Lighting","Perspective","People","Photography","Textures","Vintage","Uncategorised"];
+        await saveCategories();
+    }
+    if (!categories.includes("Uncategorised")) {
+        categories.push("Uncategorised");
+        await saveCategories();
+    }
+}
+
+function getAllEffects() {
     return new Promise(resolve => {
-        const tx = db.transaction("sources", "readonly");
-        const store = tx.objectStore("sources");
-        const req = store.getAll();
-        req.onsuccess = () => {
-            sources = req.result || [];
-            resolve(sources);
+        const tx = db.transaction('effects', 'readonly');
+        tx.objectStore('effects').getAll().onsuccess = e => resolve(e.target.result || []);
+    });
+}
+
+function getAllCategories() {
+    return new Promise(resolve => {
+        const tx = db.transaction('categories', 'readonly');
+        tx.objectStore('categories').getAll().onsuccess = e => {
+            const raw = e.target.result || [];
+            resolve(raw.map(c => (c && c.name) ? c.name : c));
         };
     });
 }
 
-function saveSources() {
-    if (!db) return;
-    const tx = db.transaction("sources", "readwrite");
-    const store = tx.objectStore("sources");
+async function saveData() {
+    const tx = db.transaction('effects', 'readwrite');
+    const store = tx.objectStore('effects');
     store.clear();
-    sources.forEach(item => store.put(item));
-}
-
-// ==================== Sources Functions ====================
-function renderSources() {
-    const container = document.getElementById("sources-list") || document.getElementById("sources-container");
-    if (!container) return;
-
-    container.innerHTML = sources.length === 0 
-        ? `<div class="text-center py-12 text-zinc-400">No sources yet.<br>Click "Add New Source"</div>`
-        : sources.map((s, i) => `
-            <div class="bg-zinc-900 border border-zinc-700 rounded-3xl p-5 flex justify-between items-center">
-                <div>
-                    <div class="font-medium">${s.name}</div>
-                    ${s.type ? `<div class="text-xs text-zinc-500">${s.type}</div>` : ''}
-                </div>
-                <button onclick="deleteSource(${i})" class="text-red-400 hover:text-red-300 p-2">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-        `).join('');
-}
-
-function addNewSource() {
-    document.getElementById("source-modal").classList.remove("hidden");
-    document.getElementById("source-name").focus();
-}
-
-function closeSourceModal() {
-    document.getElementById("source-modal").classList.add("hidden");
-}
-
-function saveNewSource() {
-    const name = document.getElementById("source-name").value.trim();
-    if (!name) return alert("Source name is required");
-
-    sources.unshift({
-        id: "src_" + Date.now(),
-        name: name,
-        type: document.getElementById("source-type").value.trim() || "General",
-        added: new Date().toISOString()
-    });
-
-    saveSources();
-    renderSources();
-    closeSourceModal();
-    showToast("✅ Source added");
-}
-
-function deleteSource(i) {
-    if (confirm("Delete this source?")) {
-        sources.splice(i, 1);
-        saveSources();
-        renderSources();
+    for (const eff of effects) {
+        await new Promise(r => store.put(eff).onsuccess = r);
     }
 }
 
-// ==================== Backup & Import/Export ====================
-function fullAppBackup() {
-    const backup = {
-        version: "3.68",
-        exportedAt: new Date().toISOString(),
-        effects: effects,
-        categories: categories,
-        sources: sources
-    };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `EffectLibrary_FullBackup_${new Date().toISOString().slice(0,16).replace(/[:T]/g, '-')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast("💾 Full Backup downloaded");
+async function saveCategories() {
+    const tx = db.transaction('categories', 'readwrite');
+    const store = tx.objectStore('categories');
+    store.clear();
+    for (const cat of categories) {
+        await new Promise(r => store.put({ name: cat }).onsuccess = r);
+    }
 }
 
-function exportData() {
-    fullAppBackup();
-}
-
+// ==================== ORIGINAL WORKING IMPORT ====================
 function importData() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = e => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async function(e) {
         const file = e.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
-        reader.onload = ev => {
+        reader.onload = async function(ev) {
             try {
-                const data = JSON.parse(ev.target.result);
-                if (data.effects) effects = data.effects;
-                if (data.categories) categories = data.categories;
-                if (data.sources) {
-                    sources = data.sources;
-                    saveSources();
+                const importedData = JSON.parse(ev.target.result);
+
+                if (!importedData.effects || !importedData.categories) {
+                    alert("❌ Invalid backup file — missing effects or categories");
+                    return;
                 }
-                renderEverything();
-                showToast("✅ Import successful!");
+
+                if (!confirm(`Import ${importedData.effects.length} effects? This will replace current data.`)) {
+                    return;
+                }
+
+                // Clean effects
+                let cleanedEffects = importedData.effects.map(eff => {
+                    let cats = [];
+                    if (eff.categories && Array.isArray(eff.categories)) {
+                        cats = eff.categories;
+                    } else if (eff.category && typeof eff.category === 'string') {
+                        cats = [eff.category];
+                    }
+                    cats = cats.map(c => {
+                        if (typeof c === 'string') return c.trim();
+                        if (c && c.name) return c.name.trim();
+                        return String(c).trim();
+                    }).filter(Boolean);
+                    if (cats.length === 0) cats = ["Uncategorised"];
+
+                    return {
+                        id: eff.id || 'eff_' + Date.now() + Math.random(),
+                        name: eff.name || 'Unnamed Effect',
+                        categories: cats,
+                        prompt: eff.prompt || '',
+                        notes: eff.notes || '',
+                        image: eff.image || null,
+                        dateAdded: eff.dateAdded || new Date().toISOString()
+                    };
+                });
+
+                // Clean categories
+                let cleanedCategories = importedData.categories.map(c => {
+                    if (typeof c === 'string') return c.trim();
+                    if (c && c.name) return c.name.trim();
+                    return String(c).trim();
+                }).filter(Boolean);
+
+                if (!cleanedCategories.includes("Uncategorised")) {
+                    cleanedCategories.push("Uncategorised");
+                }
+
+                effects = cleanedEffects;
+                categories = cleanedCategories;
+
+                await saveData();
+                await saveCategories();
+
+                // Re-render UI
+                if (typeof renderManageSidebar === 'function') renderManageSidebar();
+                if (typeof renderMainEffects === 'function' && selectedCategory) {
+                    renderMainEffects(selectedCategory);
+                } else if (typeof renderMainEffects === 'function') {
+                    renderMainEffects("Uncategorised");
+                }
+
+                const summary = `${effects.length} effects + ${categories.length} categories imported`;
+                if (typeof showToast === 'function') showToast(summary);
+                alert(`✅ Import Complete!\n\n${summary}`);
+
             } catch (err) {
-                alert("❌ Invalid backup file");
+                alert("❌ Error importing file: " + err.message);
             }
         };
         reader.readAsText(file);
@@ -154,43 +169,111 @@ function importData() {
     input.click();
 }
 
-// ==================== Basic UI Helpers ====================
-function showToast(message) {
-    const toast = document.createElement("div");
-    toast.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#18181b; color:white; padding:12px 24px; border-radius:9999px; z-index:9999; border:1px solid #3b82f6;";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
+// ==================== EXPORT & FULL BACKUP ====================
+async function exportData(autoBackup = false) {
+    const data = {
+        version: "3.68",
+        exportedAt: new Date().toISOString(),
+        categories: categories,
+        effects: effects,
+        sources: sources
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `EL_${new Date().toISOString().slice(0,10)}_${new Date().toTimeString().slice(0,5).replace(':','-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
-function renderEverything() {
-    // Placeholder - add your original render functions here if needed
-    console.log("App rendered");
+function fullAppBackup() {
+    exportData();
 }
 
-// ==================== Tab Switching ====================
+// ==================== SOURCES ====================
+async function loadSources() {
+    if (!db) await initDB();
+    return new Promise(resolve => {
+        const tx = db.transaction('sources', 'readonly');
+        tx.objectStore('sources').getAll().onsuccess = e => {
+            sources = e.target.result || [];
+            resolve(sources);
+        };
+    });
+}
+
+function saveSources() {
+    if (!db) return;
+    const tx = db.transaction('sources', 'readwrite');
+    const store = tx.objectStore('sources');
+    store.clear();
+    sources.forEach(s => store.put(s));
+}
+
+function renderSources() {
+    const list = document.getElementById('sources-list');
+    if (!list) return;
+    list.innerHTML = sources.length === 0 
+        ? `<p class="text-zinc-400 text-center py-8">No sources yet</p>`
+        : sources.map((s, i) => `
+            <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 flex justify-between items-center">
+                <div>
+                    <div class="font-medium">${s.name}</div>
+                    ${s.type ? `<div class="text-xs text-zinc-500">${s.type}</div>` : ''}
+                </div>
+                <button onclick="deleteSource(${i})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `).join('');
+}
+
+function addNewSource() {
+    document.getElementById('source-modal').classList.remove('hidden');
+}
+
+function closeSourceModal() {
+    document.getElementById('source-modal').classList.add('hidden');
+}
+
+function saveNewSource() {
+    const name = document.getElementById('source-name').value.trim();
+    if (!name) return alert("Name required");
+    sources.unshift({
+        id: 'src_' + Date.now(),
+        name,
+        type: document.getElementById('source-type').value.trim() || '',
+        added: new Date().toISOString()
+    });
+    saveSources();
+    renderSources();
+    closeSourceModal();
+}
+
+function deleteSource(i) {
+    if (confirm("Delete source?")) {
+        sources.splice(i, 1);
+        saveSources();
+        renderSources();
+    }
+}
+
+// ==================== BASIC TAB + INIT ====================
 function switchTab(tab) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    const content = document.getElementById('section-' + tab) || document.getElementById('tab-content-' + tab);
-    if (content) content.classList.remove('hidden');
+    document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
+    const section = document.getElementById('section-' + tab);
+    if (section) section.classList.remove('hidden');
 
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    const activeTab = document.getElementById('tab-' + tab);
-    if (activeTab) activeTab.classList.add('active');
-
-    if (tab === 'sources' || tab === 2) {
+    if (tab === 'sources') {
         loadSources().then(renderSources);
     }
 }
 
-// Init App
 window.onload = async function() {
     await initDB();
+    await loadData();
     await loadSources();
     
-    // Default to Manage tab
-    switchTab('manage');
+    if (typeof switchTab === 'function') switchTab('manage');
     
-    console.log("✅ Effect Library v3.68 fully loaded with Sources + Backup");
-    showToast("✅ App restored - Import your backup now");
+    console.log("✅ v3.68 stable restore loaded — Import should now rebuild categories & effects");
 };
