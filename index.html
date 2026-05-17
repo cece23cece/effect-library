@@ -129,13 +129,49 @@
         </div>
     </div>
 
-    <!-- SOURCES TAB PLACEHOLDER -->
+    <!-- SOURCES TAB -->
     <div id="section-sources" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
         <div class="max-w-4xl mx-auto">
-            <h2 class="text-2xl font-semibold mb-2">Sources</h2>
-            <p class="text-zinc-400 mb-8">Manage your image sources</p>
-            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center text-zinc-400">
-                Sources tab coming in next step...
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-semibold">Image Sources</h2>
+                    <p class="text-zinc-400">Manage where your reference images come from (Grok Imagine, Wombo, etc.)</p>
+                </div>
+                <button onclick="addNewSource()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-2xl flex items-center gap-x-2 font-medium">
+                    <i class="fa-solid fa-plus"></i> Add New Source
+                </button>
+            </div>
+
+            <div id="sources-list" class="space-y-3"></div>
+
+            <div id="sources-empty" class="hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-12 text-center">
+                <i class="fa-solid fa-layer-group text-5xl text-zinc-600 mb-4"></i>
+                <p class="text-zinc-400">No sources added yet</p>
+                <p class="text-sm text-zinc-500 mt-2">Add your first source to start tracking</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Add Source Modal -->
+    <div id="source-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-md">
+            <div class="p-6 border-b border-zinc-800 flex justify-between items-center">
+                <h3 class="text-xl font-semibold">Add New Source</h3>
+                <button onclick="closeSourceModal()" class="text-zinc-400 hover:text-white text-3xl leading-none">×</button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">Source Name</label>
+                    <input id="source-name" type="text" class="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-3" placeholder="e.g. Grok Imagine">
+                </div>
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">Type / Platform (optional)</label>
+                    <input id="source-type" type="text" class="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-3" placeholder="e.g. AI Generator">
+                </div>
+                <div class="flex gap-4 pt-4">
+                    <button onclick="saveNewSource()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-4 rounded-3xl font-semibold">Add Source</button>
+                    <button onclick="closeSourceModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 py-4 rounded-3xl font-semibold">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
