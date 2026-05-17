@@ -46,6 +46,7 @@
         </div>
     </div>
 
+    <!-- MANAGE SECTION -->
     <div id="section-manage" class="max-w-screen-xl mx-auto px-6 py-6">
         <div class="flex h-[calc(100vh-180px)] gap-4">
             <div class="w-56 bg-zinc-900 border border-zinc-800 rounded-3xl p-4 overflow-auto">
@@ -70,13 +71,57 @@
         </div>
     </div>
 
+    <!-- PROMPT BUILDER SECTION (FULL ORIGINAL) -->
     <div id="section-builder" class="max-w-screen-xl mx-auto px-6 py-6 hidden">
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-semibold mb-2">Prompt Builder</h2>
             <p class="text-zinc-400 mb-8">Build your prompt in order • Drag to reorder</p>
-            <!-- Prompt Builder content from stable v3.65 -->
-            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center text-zinc-400">
-                Prompt Builder content restored from v3.65
+
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm mb-2 text-zinc-400">1. Category</label>
+                        <select id="builder-category" onchange="updateBuilderEffects()" class="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 h-[56px]"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-2 text-zinc-400">2. Effect</label>
+                        <div class="flex gap-3 items-end">
+                            <select id="builder-effect" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 h-[56px]"></select>
+                            <button onclick="addToBuilder()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[56px] flex items-center justify-center min-w-[140px]">Add Effect</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2 text-zinc-400">3. Extra Instructions / Custom Phrase</label>
+                    <div class="flex gap-3 items-end">
+                        <textarea id="extra-instructions" rows="2" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 resize-y h-[56px]"></textarea>
+                        <button onclick="addCustomPhrase()" class="px-8 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium whitespace-nowrap h-[56px] flex items-center justify-center min-w-[140px]">Add Phrase</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-medium">Prompt Sequence (drag to reorder)</span>
+                    <button onclick="clearBuilder()" class="text-red-400 hover:text-red-500 text-sm">Clear All</button>
+                </div>
+                <div id="selected-builder-list" class="flex flex-wrap gap-3 min-h-[320px] bg-zinc-950 border border-zinc-700 rounded-2xl p-6"></div>
+            </div>
+
+            <button onclick="generatePrompt()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-5 rounded-3xl font-semibold text-lg mb-8">
+                Generate Prompt
+            </button>
+
+            <div id="generated-prompt-container" class="hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+                <div class="flex justify-between mb-4">
+                    <span class="font-medium">Generated Prompt</span>
+                    <div class="flex gap-2">
+                        <button onclick="clearGeneratedPrompt()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm">Clear</button>
+                        <button onclick="copyPrompt()" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm">Copy</button>
+                    </div>
+                </div>
+                <div id="generated-prompt" class="bg-zinc-950 p-6 rounded-2xl text-sm whitespace-pre-wrap"></div>
             </div>
         </div>
     </div>
